@@ -74,10 +74,10 @@ app
       });
 
       const action = amount > 0
-				? 'одолжил'
+				? 'дал взаймы'
 				: amount === 0
 					? 'фанится'
-					: 'вернул';
+					: 'получил';
       const amountText = amount === 0
 				? ''
 				: ` ${Math.abs(amount)}р. на ${description}`;
@@ -104,7 +104,7 @@ app
 			}
 
 			const action = diff > 0
-				? 'одолжил'
+				? 'дал взаймы'
 				: diff === 0
 					? 'ничего никому не должен'
 					: 'должен';
