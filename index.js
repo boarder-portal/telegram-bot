@@ -13,7 +13,7 @@ try {
     history: [],
     userId: null,
     diff: 0
-  }), { flag: fs.constants.O_CREAT });
+  }), { flag: 'wx' });
 } catch (err) {}
 
 app.use(bodyParser.json()); // for parsing application/json
