@@ -11,12 +11,14 @@ app.use(bodyParser.urlencoded({
 })); // for parsing application/x-www-form-urlencoded
 
 //This is the route the API will call
-app.post('/new-message', function(req, res) {
+app.post('/new-message', (req, res) => {
   const {message} = req.body;
+
+  console.log(req.body);
 
   //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
 
-  if (!message || message.text.toLowerCase().indexOf('marco') < 0) {
+  if (message !== 'ping') {
     // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
     return res.end();
   }
@@ -26,22 +28,22 @@ app.post('/new-message', function(req, res) {
   // Remember to use your own API toked instead of the one below  "https://api.telegram.org/bot<your_api_token>/sendMessage"
   axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
     chat_id: message.chat.id,
-    text: 'Гони бабки!!'
+    text: 'pong'
   })
-    .then(response => {
+    .then(() => {
       // We get here if the message was successfully posted
       console.log('Message posted');
-      res.end('ok')
+      res.end('ok');
     })
     .catch(err => {
       // ...and here if it was not
-      console.log('Error :', err)
-      res.end('Error :' + err)
+      console.log('Error :', err);
+      res.end('Error :' + err);
     })
 
 });
 
 // Finally, start our server
-app.listen(3000, function() {
+app.listen(3000, () => {
   console.log('Telegram app listening on port 3000!');
 });
