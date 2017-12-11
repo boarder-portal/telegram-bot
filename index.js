@@ -4,17 +4,17 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const moment = require('moment');
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
 const file = path.join(__dirname, 'data.json');
 
+moment.locale('ru');
+
 try {
   fs.writeFileSync(file, JSON.stringify({
     history: [],
-    initialUser: {
-      id: null,
-      name: ''
-    },
+    initialUser: null,
     diff: 0
   }), { flag: 'wx' });
 } catch (err) {}
@@ -29,7 +29,9 @@ app
       message: {
         from: {
           id: userId,
-          username
+          username,
+					first_name: firstName,
+					last_name: lastName
         },
         chat: {
           id: chatId
@@ -48,35 +50,92 @@ app
     const matches = text.match(/^(-?\d+) ([^]+)$/);
 
     if (matches) {
-      const [, amount, description] = matches;
+      let [, amount, description] = matches;
+			const fullName = `${firstName} ${lastName}`;
       const data = JSON.parse(fs.readFileSync(file));
       const {
-				initialUser: {
-				  id: initialUserId
-        },
+				initialUser,
         history
       } = data;
 
-      if (!initialUserId) {
+      amount = +amount;
+
+      if (!initialUser) {
         data.initialUser = {
           id: userId,
-          name: username
+          fullName
         };
       }
 
-      data.diff += data.initialUser.id === userId ? +amount : -amount;
+      data.diff += data.initialUser.id === userId ? amount : -amount;
       history.push({
-				amount: +amount,
-				username,
-				date
+				amount,
+				fullName,
+				description,
+				date: moment.utc(date * 1000).format('DD MMMM YYYY в HH:mm UTC')
       });
 
-      const action = amount > 0 ? amount === 0 ? 'фанится' : 'одолжил' : 'вернул';
-      const amountText = amount === 0 ? '' : `${Math.abs(amount)}р`;
+      const action = amount > 0
+				? 'одолжил'
+				: amount === 0
+					? 'фанится'
+					: 'вернул';
+      const amountText = amount === 0
+				? ''
+				: `${Math.abs(amount)}р`;
 
 			axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
 				chat_id: chatId,
-				text: `${username} ${action} ${amountText}.`
+				text: `${fullName} ${action} ${amountText}.`
+			});
+
+			return res.end();
+		}
+
+		if (text === 'get') {
+			const data = JSON.parse(fs.readFileSync(file));
+			const {
+				initialUser,
+				diff
+			} = data;
+
+			if (!initialUser) {
+				return res.end();
+			}
+
+			const action = diff > 0
+				? 'одолжил'
+				: diff === 0
+					? 'ничего никому не должен'
+					: 'должен';
+			const amountText = diff === 0
+				? ''
+				: `${Math.abs(diff)}р`;
+
+			axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+				chat_id: chatId,
+				text: `${initialUser.fullName} ${action} ${amountText}.`
+			});
+
+			return res.end();
+		}
+
+		if (text === 'history') {
+			const data = JSON.parse(fs.readFileSync(file));
+			const {
+				history
+			} = data;
+
+			axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+				chat_id: chatId,
+				text: history
+					.map(({
+						amount,
+						fullName,
+						description,
+						date
+					}) => `${amount} ${fullName} ${description} ${date}`)
+					.join('\n')
 			});
 
 			return res.end();
@@ -85,5 +144,5 @@ app
 		res.end();
   })
   .listen(process.env.PORT, () => {
-    console.log('Telegram app listening on port 3000!');
+    console.log(`Telegram app listening on port ${process.env.PORT}!`);
   });
