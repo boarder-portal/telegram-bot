@@ -82,11 +82,13 @@ app
 					: 'вернул';
       const amountText = amount === 0
 				? ''
-				: `${Math.abs(amount)}р`;
+				: ` ${Math.abs(amount)}р. на ${description}`;
+
+      fs.writeFileSync(file, JSON.stringify(data), 'utf8');
 
 			axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
 				chat_id: chatId,
-				text: `${fullName} ${action} ${amountText}.`
+				text: `${fullName} ${action}${amountText}`
 			});
 
 			return res.end();
@@ -110,11 +112,11 @@ app
 					: 'должен';
 			const amountText = diff === 0
 				? ''
-				: `${Math.abs(diff)}р`;
+				: ` ${Math.abs(diff)}р`;
 
 			axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
 				chat_id: chatId,
-				text: `${initialUser.fullName} ${action} ${amountText}.`
+				text: `${initialUser.fullName} ${action}${amountText}`
 			});
 
 			return res.end();
