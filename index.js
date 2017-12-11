@@ -18,7 +18,7 @@ app.post('/new-message', (req, res) => {
 
   //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
 
-  if (message !== 'ping') {
+  if (message.text !== 'ping') {
     // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
     return res.end();
   }
