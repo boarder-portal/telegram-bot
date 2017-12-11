@@ -45,7 +45,7 @@ app
       return res.end();
     }*/
 
-    const matches = text.match(!/^(-?\d+) ([^]+)$/);
+    const matches = text.match(/^(-?\d+) ([^]+)$/);
 
     if (matches) {
       const [, amount, description] = matches;
