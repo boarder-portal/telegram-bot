@@ -25,6 +25,10 @@ app
     extended: true
   }))
   .post('/new-message', (req, res) => {
+  	console.log(req.body);
+  	
+  	if (!req.body.message) return res.end();
+
     const {
       message: {
         from: {
@@ -40,12 +44,6 @@ app
         text
       }
     } = req.body;
-
-    console.log(req.body);
-
-    /*if (text.indexOf('get') !== 0 && text.indexOf('history') !== 0 && !/^-?\d+/.test(text)) {
-      return res.end();
-    }*/
 
     const matches = text.match(/^(-?\d+) ([^]+)$/);
 
