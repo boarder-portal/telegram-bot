@@ -6,11 +6,15 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
+const file = path.join(__dirname, 'data.json');
 
-fs.writeFileSync(path.join(__dirname, 'data.txt'), '');
-
-console.log(__dirname, fs.readdirSync(__dirname));
-console.log(fs.readdirSync(path.join(__dirname, '..')));
+try {
+  fs.writeFileSync(file, JSON.stringify({
+    history: [],
+    userId: null,
+    diff: 0
+  }), { flag: fs.constants.O_CREAT });
+} catch (err) {}
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
@@ -19,13 +23,25 @@ app.use(bodyParser.urlencoded({
 
 //This is the route the API will call
 app.post('/new-message', (req, res) => {
-  const {message} = req.body;
+  const {
+    message: {
+      from: {
+        id: userId,
+        username
+      },
+      chat: {
+        id: chatId
+      },
+      date,
+      text
+    }
+  } = req.body;
 
   console.log(req.body);
 
   //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
 
-  if (message.text !== 'ping') {
+  if (text.indexOf('get') !== 0 && text.indexOf('history') !== 0 && !/^-?\d+/.test(text)) {
     // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
     return res.end();
   }
