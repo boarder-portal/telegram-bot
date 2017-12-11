@@ -1,9 +1,16 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const axios = require('axios');
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
+
+fs.writeFileSync(path.join(__dirname, 'data.txt'), '');
+
+console.log(__dirname, fs.readdirSync(__dirname));
+console.log(fs.readdirSync(path.join(__dirname, '..')));
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({
