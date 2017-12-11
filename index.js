@@ -11,62 +11,79 @@ const file = path.join(__dirname, 'data.json');
 try {
   fs.writeFileSync(file, JSON.stringify({
     history: [],
-    userId: null,
+    initialUser: {
+      id: null,
+      name: ''
+    },
     diff: 0
   }), { flag: 'wx' });
 } catch (err) {}
 
-app.use(bodyParser.json()); // for parsing application/json
-app.use(bodyParser.urlencoded({
-  extended: true
-})); // for parsing application/x-www-form-urlencoded
+app
+  .use(bodyParser.json())
+  .use(bodyParser.urlencoded({
+    extended: true
+  }))
+  .post('/new-message', (req, res) => {
+    const {
+      message: {
+        from: {
+          id: userId,
+          username
+        },
+        chat: {
+          id: chatId
+        },
+        date,
+        text
+      }
+    } = req.body;
 
-//This is the route the API will call
-app.post('/new-message', (req, res) => {
-  const {
-    message: {
-      from: {
-        id: userId,
-        username
-      },
-      chat: {
-        id: chatId
-      },
-      date,
-      text
-    }
-  } = req.body;
+    console.log(req.body);
 
-  console.log(req.body);
+    /*if (text.indexOf('get') !== 0 && text.indexOf('history') !== 0 && !/^-?\d+/.test(text)) {
+      return res.end();
+    }*/
 
-  //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
+    const matches = text.match(!/^(-?\d+) ([^]+)$/);
 
-  if (text.indexOf('get') !== 0 && text.indexOf('history') !== 0 && !/^-?\d+/.test(text)) {
-    // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
-    return res.end();
-  }
+    if (matches) {
+      const [, amount, description] = matches;
+      const data = JSON.parse(fs.readFileSync(file));
+      const {
+				initialUser: {
+				  id: initialUserId
+        },
+        history
+      } = data;
 
-  // If we've gotten this far, it means that we have received a message containing the word "marco".
-  // Respond by hitting the telegram bot API and responding to the approprite chat_id with the word "Polo!!"
-  // Remember to use your own API toked instead of the one below  "https://api.telegram.org/bot<your_api_token>/sendMessage"
-  axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-    chat_id: message.chat.id,
-    text: 'pong'
+      if (!initialUserId) {
+        data.initialUser = {
+          id: userId,
+          name: username
+        };
+      }
+
+      data.diff += data.initialUser.id === userId ? +amount : -amount;
+      history.push({
+				amount: +amount,
+				username,
+				date
+      });
+
+      const action = amount > 0 ? amount === 0 ? 'фанится' : 'одолжил' : 'вернул';
+      const amountText = amount === 0 ? '' : `${Math.abs(amount)}р`;
+
+			axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+				chat_id: chatId,
+				text: `${username} ${action} ${amountText}.`
+			});
+
+			return res.end();
+		}
+
+		res.end();
   })
-    .then(() => {
-      // We get here if the message was successfully posted
-      console.log('Message posted');
-      res.end('ok');
-    })
-    .catch(err => {
-      // ...and here if it was not
-      console.log('Error :', err);
-      res.end('Error :' + err);
-    })
-
-});
-
-// Finally, start our server
-app.listen(process.env.PORT, () => {
-  console.log('Telegram app listening on port 3000!');
-});
+  .listen(process.env.PORT, () => {
+    console.log('Telegram app listening on port 3000!');
+  });
