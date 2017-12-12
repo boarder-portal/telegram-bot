@@ -20,8 +20,8 @@
   "homepage": "https://github.com/boarder-portal/telegram-bot#readme",
   "dependencies": {
     "axios": "^0.17.1",
-    "body-parser": "^1.18.2",
-    "express": "^4.16.2",
+    "koa": "^2.4.1",
+    "koa-bodyparser": "^4.2.0",
     "moment": "^2.19.4"
   }
 }
