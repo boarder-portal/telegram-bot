@@ -33,109 +33,119 @@ app
       return next();
     }
 
-    const {
-      message: {
-        from: {
-          id: userId,
-          first_name: firstName,
-          last_name: lastName
-        },
-        chat: {
-          id: chatId
-        },
-        date,
-        text
-      }
-    } = ctx.request.body;
-
-    const matches = text.match(/^(-?\d+) ([^]+)$/);
-
-    if (matches) {
-      let [, amount, description] = matches;
-      const fullName = `${firstName} ${lastName}`;
-      const data = JSON.parse(fs.readFileSync(file));
+    try {
       const {
-        initialUser,
-        history
-      } = data;
+        message: {
+          from: {
+            id: userId,
+            first_name: firstName,
+            last_name: lastName
+          },
+          chat: {
+            id: chatId
+          },
+          date,
+          text
+        }
+      } = ctx.request.body;
 
-      amount = +amount;
+      const matches = text.match(/^(-?\d+) ([^]+)$/);
 
-      if (!initialUser) {
-        data.initialUser = {
-          id: userId,
-          fullName
-        };
-      }
+      if (matches) {
+        let [, amount, description] = matches;
+        const fullName = `${firstName} ${lastName}`;
+        const data = JSON.parse(fs.readFileSync(file));
+        const {
+          initialUser,
+          history
+        } = data;
 
-      data.diff += data.initialUser.id === userId ? amount : -amount;
-      history.push({
-        amount,
-        fullName,
-        description,
-        date: moment.utc(date * 1000).format('DD MMMM YYYY в HH:mm UTC')
-      });
+        amount = +amount;
 
-      const action = amount > 0
-        ? 'дал взаймы'
-        : amount === 0
-          ? 'фанится'
-          : 'получил';
-      const amountText = amount === 0
-        ? ''
-        : ` ${Math.abs(amount)}р. на ${description}`;
+        if (!initialUser) {
+          data.initialUser = {
+            id: userId,
+            fullName
+          };
+        }
 
-      fs.writeFileSync(file, JSON.stringify(data), 'utf8');
+        data.diff += data.initialUser.id === userId ? amount : -amount;
+        history.push({
+          amount,
+          fullName,
+          description,
+          date: moment.utc(date * 1000).format('DD MMMM YYYY в HH:mm UTC')
+        });
 
-      return axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-        chat_id: chatId,
-        text: `${fullName} ${action}${amountText}`
-      });
-    }
+        const action = amount > 0
+          ? 'дал взаймы'
+          : amount === 0
+            ? 'фанится'
+            : 'получил';
+        const amountText = amount === 0
+          ? ''
+          : ` ${Math.abs(amount)}р. на ${description}`;
 
-    if (text === 'get') {
-      const data = JSON.parse(fs.readFileSync(file));
-      const {
-        initialUser,
-        diff
-      } = data;
+        fs.writeFileSync(file, JSON.stringify(data), 'utf8');
 
-      if (!initialUser) {
+        await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+          chat_id: chatId,
+          text: `${fullName} ${action}${amountText}`
+        });
+
         return next();
       }
 
-      const action = diff > 0
-        ? 'дал взаймы'
-        : diff === 0
-          ? 'ничего никому не должен'
-          : 'должен';
-      const amountText = diff === 0
-        ? ''
-        : ` ${Math.abs(diff)}р`;
+      if (text === 'get') {
+        const data = JSON.parse(fs.readFileSync(file));
+        const {
+          initialUser,
+          diff
+        } = data;
 
-      return axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-        chat_id: chatId,
-        text: `${initialUser.fullName} ${action}${amountText}`
-      });
-    }
+        if (!initialUser) {
+          return next();
+        }
 
-    if (text === 'history') {
-      const data = JSON.parse(fs.readFileSync(file));
-      const {
-        history
-      } = data;
+        const action = diff > 0
+          ? 'дал взаймы'
+          : diff === 0
+            ? 'ничего никому не должен'
+            : 'должен';
+        const amountText = diff === 0
+          ? ''
+          : ` ${Math.abs(diff)}р`;
 
-      return axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-        chat_id: chatId,
-        text: history
-          .map(({
-            amount,
-            fullName,
-            description,
-            date
-          }) => `${amount} ${fullName} ${description} ${date}`)
-          .join('\n')
-      });
+        await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+          chat_id: chatId,
+          text: `${initialUser.fullName} ${action}${amountText}`
+        });
+
+        return next();
+      }
+
+      if (text === 'history') {
+        const data = JSON.parse(fs.readFileSync(file));
+        const {
+          history
+        } = data;
+
+        await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+          chat_id: chatId,
+          text: history
+            .map(({
+              amount,
+              fullName,
+              description,
+              date
+            }) => `${amount} ${fullName} ${description} ${date}`)
+            .join('\n')
+        });
+
+        return next();
+      }
+    } catch (err) {
+      return next();
     }
 
     await next();
