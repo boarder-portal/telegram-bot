@@ -23,7 +23,7 @@ try {
 app
   .use(bodyParser())
   .use(async (ctx, next) => {
-    if (ctx.url !== '/new-message' || ctx.method !== 'post') {
+    if (ctx.url !== '/new-message' || ctx.method !== 'POST') {
       return next();
     }
 
