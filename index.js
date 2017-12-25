@@ -51,7 +51,7 @@ app
 
     console.log(ctx.request.body);
 
-    if (!ctx.request.body.message) {
+    if (!ctx.request.body.inline_query) {
       return next();
     }
 
@@ -65,13 +65,12 @@ app
         chat: {
           id: chatId
         },
-        date,
-        text
+        query
       }
     } = ctx.request.body;
     const redisKey = `money-telegram-bot-${chatId}`;
 
-    const matches = text.match(/^(-?\d+) ([^]+)$/);
+    const matches = query.match(/^(-?\d+) ([^]+)$/);
     const getData = async () => {
       let data = await redisGet(redisKey);
 
@@ -114,7 +113,7 @@ app
         amount,
         fullName,
         description,
-        date: moment.utc(date * 1000).format('DD MMMM YYYY в HH:mm UTC')
+        date: moment.utc().format('DD MMMM YYYY в HH:mm UTC')
       });
 
       const action = amount > 0
@@ -136,7 +135,7 @@ app
       return next();
     }
 
-    if (text === 'get') {
+    if (query === 'get') {
       const data = await getData();
       const {
         initialUser,
@@ -164,7 +163,7 @@ app
       return next();
     }
 
-    if (text === 'history') {
+    if (query === 'history') {
       const data = await getData();
       const {
         history
