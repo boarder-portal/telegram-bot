@@ -1,5 +1,3 @@
-const path = require('path');
-const fs = require('fs');
 const util = require('util');
 
 const Application = require('koa');
@@ -9,7 +7,6 @@ const moment = require('moment');
 const redis = require('redis');
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
-const file = path.join(__dirname, 'data.json');
 
 const {
   PORT,
@@ -35,14 +32,6 @@ console.log(process.env);
 const app = new Application();
 
 moment.locale('ru');
-
-try {
-  fs.writeFileSync(file, JSON.stringify({
-    history: [],
-    initialUser: null,
-    diff: 0
-  }), { flag: 'wx' });
-} catch (err) {}
 
 app
   .use(bodyParser())
@@ -80,13 +69,32 @@ app
         text
       }
     } = ctx.request.body;
+    const redisKey = `money-telegram-bot-${chatId}`;
 
     const matches = text.match(/^(-?\d+) ([^]+)$/);
+    const getData = async () => {
+      let data = await redisGet(redisKey);
+
+      if (data) {
+        data = JSON.parse(data);
+      } else {
+        data = {
+          history: [],
+          initialUser: null,
+          diff: 0
+        };
+
+        await redisSet(redisKey, data);
+      }
+
+      return data;
+    };
+    const replaceData = (data) => redisSet(redisKey, JSON.stringify(data));
 
     if (matches) {
       let [, amount, description] = matches;
       const fullName = `${firstName} ${lastName}`;
-      const data = JSON.parse(fs.readFileSync(file));
+      const data = await getData();
       const {
         initialUser,
         history
@@ -118,7 +126,7 @@ app
         ? ''
         : ` ${Math.abs(amount)}р. на ${description}`;
 
-      fs.writeFileSync(file, JSON.stringify(data), 'utf8');
+      await replaceData(data);
 
       await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
         chat_id: chatId,
@@ -129,7 +137,7 @@ app
     }
 
     if (text === 'get') {
-      const data = JSON.parse(fs.readFileSync(file));
+      const data = await getData();
       const {
         initialUser,
         diff
@@ -157,7 +165,7 @@ app
     }
 
     if (text === 'history') {
-      const data = JSON.parse(fs.readFileSync(file));
+      const data = await getData();
       const {
         history
       } = data;
