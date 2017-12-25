@@ -43,6 +43,16 @@ app
       console.log(err);
     } finally {
       ctx.body = '';
+
+      if (ctx.inlineQuery && !ctx.answerSent) {
+        axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
+          inline_query_id: ctx.inlineQuery.id,
+          results: JSON.stringify([]),
+          cache_time: 0,
+          next_offset: ''
+          // text: `${fullName} ${action}${amountText}`
+        });
+      }
     }
   })
   .use(async (ctx, next) => {
@@ -55,6 +65,8 @@ app
     if (!ctx.request.body.inline_query) {
       return next();
     }
+
+    ctx.inlineQuery = ctx.request.body.inline_query;
 
     const {
       inline_query: {
@@ -130,7 +142,7 @@ app
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
-        results: [
+        results: JSON.stringify([
           {
             type: 'photo',
             id: moment().toJSON(),
@@ -140,11 +152,13 @@ app
             photo_height: 900,
             input_message_content: `${fullName} ${action}${amountText}`
           }
-        ],
+        ]),
         cache_time: 0,
         next_offset: ''
         // text: `${fullName} ${action}${amountText}`
       });
+
+      ctx.answerSent = true;
 
       return next();
     }
