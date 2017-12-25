@@ -146,7 +146,7 @@ app
         results: [
           {
             type: 'photo',
-            id: moment().toJSON(),
+            id: `+${moment().toJSON()}`,
             photo_url: imageUrl,
             thumb_url: imageUrl,
             photo_width: 900,
@@ -159,7 +159,7 @@ app
           },
           {
             type: 'photo',
-            id: moment().toJSON(),
+            id: `-${moment().toJSON()}`,
             photo_url: imageUrl,
             thumb_url: imageUrl,
             photo_width: 900,
