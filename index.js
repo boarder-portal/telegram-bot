@@ -45,6 +45,7 @@ app
       ctx.body = '';
 
       if (ctx.inlineQuery && !ctx.answerSent) {
+        console.log('sending fallback');
         axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
           inline_query_id: ctx.inlineQuery.id,
           results: JSON.stringify([]),
@@ -142,7 +143,7 @@ app
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
-        results: JSON.stringify([
+        results: [
           {
             type: 'photo',
             id: moment().toJSON(),
@@ -150,9 +151,11 @@ app
             thumb_url: imageUrl,
             photo_width: 900,
             photo_height: 900,
-            input_message_content: `${fullName} ${action}${amountText}`
+            input_message_content: {
+              message_text: `${fullName} ${action}${amountText}`
+            }
           }
-        ]),
+        ],
         cache_time: 0,
         next_offset: ''
         // text: `${fullName} ${action}${amountText}`
