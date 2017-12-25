@@ -72,7 +72,7 @@ app
     const matches = query.match(/^(-?\d+) ([^]+)$/);
     const getData = async () => {
       // let data = await redisGet(redisKey);
-      let data = '{}';
+      let data = null;
 
       if (data) {
         data = JSON.parse(data);
@@ -83,7 +83,7 @@ app
           diff: 0
         };
 
-        await redisSet(redisKey, data);
+        // await redisSet(redisKey, data);
       }
 
       return data;
