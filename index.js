@@ -11,10 +11,24 @@ const redis = require('redis');
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
 const file = path.join(__dirname, 'data.json');
 
-const client = redis.createClient();
+const {
+  PORT,
+  REDIS_URL
+} = process.env;
+
+const client = redis.createClient({
+  url: REDIS_URL
+});
 
 const redisGet = util.promisify(client.get).bind(client);
 const redisSet = util.promisify(client.set).bind(client);
+const redisGetKeys = util.promisify(client.keys).bind(client);
+
+redisGetKeys('*').then((result) => {
+  console.log(result);
+}, (err) => {
+  console.log(err);
+});
 
 console.log(process.env);
 
@@ -96,10 +110,10 @@ app
       });
 
       const action = amount > 0
-        ? 'дал взаймы'
+        ? 'дал'
         : amount === 0
           ? 'фанится'
-          : 'получил';
+          : 'взял';
       const amountText = amount === 0
         ? ''
         : ` ${Math.abs(amount)}р. на ${description}`;
@@ -165,6 +179,6 @@ app
 
     await next();
   })
-  .listen(process.env.PORT, () => {
-    console.log(`Telegram app listening on port ${process.env.PORT}!`);
+  .listen(PORT, () => {
+    console.log(`Telegram app listening on port ${PORT}!`);
   });
