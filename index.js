@@ -64,13 +64,10 @@ app
           first_name: firstName,
           last_name: lastName
         },
-        chat: {
-          id: chatId
-        },
         query
       }
     } = ctx.request.body;
-    const redisKey = `money-telegram-bot-${chatId}`;
+    const redisKey = 'money-telegram-bot';
 
     const matches = query.match(/^(-?\d+) ([^]+)$/);
     const getData = async () => {
@@ -173,7 +170,7 @@ app
         : ` ${Math.abs(diff)}р`;
 
       await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-        chat_id: chatId,
+        chat_id: '',
         text: `${initialUser.fullName} ${action}${amountText}`
       });
 
@@ -187,7 +184,7 @@ app
       } = data;
 
       await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-        chat_id: chatId,
+        chat_id: '',
         text: history
           .map(({
             amount,
