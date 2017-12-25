@@ -152,8 +152,23 @@ app
             photo_width: 900,
             photo_height: 900,
             input_message_content: {
-              message_text: `${fullName} ${action}${amountText}`
-            }
+              message_text: `${fullName} взял ${amount}р (${description})`
+            },
+            title: 'Взял',
+            description: `Взял ${amount}р (${description})`
+          },
+          {
+            type: 'photo',
+            id: moment().toJSON(),
+            photo_url: imageUrl,
+            thumb_url: imageUrl,
+            photo_width: 900,
+            photo_height: 900,
+            input_message_content: {
+              message_text: `${fullName} дал ${amount}р (${description})`
+            },
+            title: 'Дал',
+            description: `Дал ${amount}р (${description})`
           }
         ],
         cache_time: 0,
