@@ -7,6 +7,7 @@ const moment = require('moment');
 const redis = require('redis');
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
+const imageUrl = 'https://loanscanada.ca/wp-content/uploads/2017/05/Borrowing_money.jpg';
 
 const {
   PORT,
@@ -57,6 +58,7 @@ app
 
     const {
       inline_query: {
+        id: queryId,
         from: {
           id: userId,
           first_name: firstName,
@@ -72,7 +74,8 @@ app
 
     const matches = query.match(/^(-?\d+) ([^]+)$/);
     const getData = async () => {
-      let data = await redisGet(redisKey);
+      // let data = await redisGet(redisKey);
+      let data = '{}';
 
       if (data) {
         data = JSON.parse(data);
@@ -88,7 +91,8 @@ app
 
       return data;
     };
-    const replaceData = (data) => redisSet(redisKey, JSON.stringify(data));
+    // const replaceData = (data) => redisSet(redisKey, JSON.stringify(data));
+    const replaceData = () => null;
 
     if (matches) {
       let [, amount, description] = matches;
@@ -127,9 +131,22 @@ app
 
       await replaceData(data);
 
-      await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
-        chat_id: chatId,
-        text: `${fullName} ${action}${amountText}`
+      await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
+        inline_query_id: queryId,
+        results: [
+          {
+            type: 'photo',
+            id: moment().toJSON(),
+            photo_url: imageUrl,
+            thumb_url: imageUrl,
+            photo_width: 900,
+            photo_height: 900,
+            input_message_content: `${fullName} ${action}${amountText}`
+          }
+        ],
+        cache_time: 0,
+        next_offset: ''
+        // text: `${fullName} ${action}${amountText}`
       });
 
       return next();
