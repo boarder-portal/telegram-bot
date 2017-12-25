@@ -16,6 +16,8 @@ const client = redis.createClient();
 const redisGet = util.promisify(client.get).bind(client);
 const redisSet = util.promisify(client.set).bind(client);
 
+console.log(process.env);
+
 const app = new Application();
 
 moment.locale('ru');
