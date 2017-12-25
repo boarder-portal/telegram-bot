@@ -1,12 +1,20 @@
 const path = require('path');
 const fs = require('fs');
+const util = require('util');
+
 const Application = require('koa');
 const bodyParser = require('koa-bodyparser');
 const axios = require('axios');
 const moment = require('moment');
+const redis = require('redis');
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
 const file = path.join(__dirname, 'data.json');
+
+const client = redis.createClient();
+
+const redisGet = util.promisify(client.get).bind(client);
+const redisSet = util.promisify(client.set).bind(client);
 
 const app = new Application();
 
@@ -25,6 +33,8 @@ app
   .use(async (ctx, next) => {
     try {
       await next();
+    } catch (err) {
+      console.log(err);
     } finally {
       ctx.body = '';
     }
@@ -41,7 +51,7 @@ app
     }
 
     const {
-      message: {
+      inline_query: {
         from: {
           id: userId,
           first_name: firstName,
