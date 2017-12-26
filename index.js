@@ -157,22 +157,11 @@ app
 
       // await replaceData(data);
       await redisSet(redisKey, JSON.stringify({
-        type: 'accept-button',
         userId,
         fullName,
         amount,
         description
       }));
-
-      const keyboard = {
-        inline_keyboard: [[{
-          text: 'Подтверждено',
-          callback_data: 'accept'
-        }, {
-          text: 'Отклонено',
-          callback_data: 'decline'
-        }]]
-      };
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
@@ -186,7 +175,15 @@ app
             input_message_content: {
               message_text: `${fullName} взял ${amount}р${description}`
             },
-            reply_markup: keyboard,
+            reply_markup: {
+              inline_keyboard: [[{
+                text: 'Подтверждено',
+                callback_data: `accept-take-${queryId}`
+              }, {
+                text: 'Отклонено',
+                callback_data: `decline-take-${queryId}`
+              }]]
+            },
             title: 'Взял',
             description: `Взял ${amount}р${description}`
           },
@@ -199,7 +196,15 @@ app
             input_message_content: {
               message_text: `${fullName} вернул ${amount}р`
             },
-            reply_markup: keyboard,
+            reply_markup: {
+              inline_keyboard: [[{
+                text: 'Подтверждено',
+                callback_data: `accept-return-${queryId}`
+              }, {
+                text: 'Отклонено',
+                callback_data: `decline-return-${queryId}`
+              }]]
+            },
             title: 'Вернул',
             description: `Вернул ${amount}р`
           }
