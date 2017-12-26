@@ -117,7 +117,7 @@ app
         fullName: masterFullName,
         amount,
         description
-      } = transactionCandidate;
+      } = JSON.parse(transactionCandidate);
 
       /*
       if (masterUserId === userId) {
@@ -127,7 +127,7 @@ app
 
       const fullName = `${firstName}${lastName ? ` ${lastName}` : ''}`;
       const text = method === 'take'
-        ? `Я взял ${amount}р${description}`
+        ? `Я взял ${amount}р${description ? ` (${description})` : ''}`
         : `Я вернул ${amount}р`;
 
       await redisDrop(transactionCandidateKey);
@@ -188,10 +188,6 @@ app
 
       amount = +amount;
 
-      if (description) {
-        description = ` на ${description}`;
-      }
-
       if (!initialUser) {
         data.initialUser = {
           id: userId,
@@ -225,7 +221,7 @@ app
             thumb_width: 48,
             thumb_height: 48,
             input_message_content: {
-              message_text: `Я взял ${amount}р${description}`
+              message_text: `Я взял ${amount}р${description ? ` (${description})` : ''}`
             },
             reply_markup: {
               inline_keyboard: [[{
@@ -237,7 +233,7 @@ app
               }]]
             },
             title: 'Взял',
-            description: `Взял ${amount}р${description}`
+            description: `Взял ${amount}р${description ? ` (${description})` : ''}`
           },
           {
             type: 'article',
