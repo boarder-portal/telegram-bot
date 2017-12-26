@@ -8,7 +8,8 @@ const axios = require('axios');
 const moment = require('moment');
 const redis = require('redis');
 
-const imageUrl = 'https://money-telegram-bot.herokuapp.com/image.jpg';
+const IMAGE_URL = 'https://money-telegram-bot.herokuapp.com/image.jpg';
+const THUMB_URL = 'https://money-telegram-bot.herokuapp.com/thumb.jpg';
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
 
@@ -145,7 +146,8 @@ app
 
       await replaceData(data);
 
-      const url = imageUrl + '?' + Math.random();
+      const imageUrl = IMAGE_URL + '?' + Math.random();
+      const thumbUrl = THUMB_URL + '?' + Math.random();
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
@@ -153,10 +155,10 @@ app
           {
             type: 'photo',
             id: `+${moment().toJSON()}`,
-            photo_url: url,
-            thumb_url: url,
-            photo_width: 48,
-            photo_height: 48,
+            photo_url: imageUrl,
+            thumb_url: thumbUrl,
+            photo_width: 900,
+            photo_height: 900,
             input_message_content: {
               message_text: `${fullName} взял ${amount}р (${description})`
             },
@@ -167,10 +169,10 @@ app
           {
             type: 'photo',
             id: `-${moment().toJSON()}`,
-            photo_url: url,
-            thumb_url: url,
-            photo_width: 48,
-            photo_height: 48,
+            photo_url: imageUrl,
+            thumb_url: thumbUrl,
+            photo_width: 900,
+            photo_height: 900,
             input_message_content: {
               message_text: `${fullName} вернул ${amount}р (${description})`
             },
