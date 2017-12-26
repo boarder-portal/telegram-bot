@@ -8,7 +8,6 @@ const axios = require('axios');
 const moment = require('moment');
 const redis = require('redis');
 
-const IMAGE_URL = 'https://money-telegram-bot.herokuapp.com/image.jpg';
 const THUMB_URL = 'https://money-telegram-bot.herokuapp.com/thumb.jpg';
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
@@ -24,13 +23,14 @@ const client = redis.createClient({
 
 const redisGet = util.promisify(client.get).bind(client);
 const redisSet = util.promisify(client.set).bind(client);
+const redisDrop = util.promisify(client.del).bind(client);
 const redisGetKeys = util.promisify(client.keys).bind(client);
 
-redisGetKeys('*').then((result) => {
-  console.log(result);
-}, (err) => {
-  console.log(err);
-});
+(async () => {
+  const keys = await redisGetKeys('*');
+
+  await Promise.all(keys.map((key) => redisDrop(key)));
+})();
 
 console.log(`State up: ${moment().toJSON()}`);
 
@@ -156,12 +156,12 @@ app
       });
 
       // await replaceData(data);
-      await redisSet(redisKey, JSON.stringify({
+      await redisSet([redisKey, JSON.stringify({
         userId,
         fullName,
         amount,
         description
-      }));
+      }), 'EX', 60]);
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
