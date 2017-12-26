@@ -51,13 +51,20 @@ app
 
       if (ctx.inlineQuery && !ctx.answerSent) {
         console.log('sending fallback');
-        axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
-          inline_query_id: ctx.inlineQuery.id,
-          results: JSON.stringify([]),
-          cache_time: 0,
-          next_offset: ''
-          // text: `${fullName} ${action}${amountText}`
-        });
+
+        (async () => {
+          try {
+            await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
+              inline_query_id: ctx.inlineQuery.id,
+              results: JSON.stringify([]),
+              cache_time: 0,
+              next_offset: ''
+              // text: `${fullName} ${action}${amountText}`
+            });
+          } catch (err) {
+            console.log(err);
+          }
+        })();
       }
     }
   })
@@ -68,26 +75,35 @@ app
 
     console.log(ctx.request.body);
 
-    if (!ctx.request.body.inline_query) {
+    const {
+      inline_query,
+      callback_query
+    } = ctx.request.body;
+
+    if (!inline_query && !callback_query) {
+      return next();
+    }
+
+    if (callback_query) {
+      console.log(callback_query);
+
       return next();
     }
 
     ctx.inlineQuery = ctx.request.body.inline_query;
 
     const {
-      inline_query: {
-        id: queryId,
-        from: {
-          id: userId,
-          first_name: firstName,
-          last_name: lastName
-        },
-        query
-      }
-    } = ctx.request.body;
+      id: queryId,
+      from: {
+        id: userId,
+        first_name: firstName,
+        last_name: lastName
+      },
+      query
+    } = inline_query;
     const redisKey = 'money-telegram-bot';
 
-    const matches = query.match(/^(-?\d+) ([^]+)$/);
+    const matches = query.match(/^(\d+)(?: ([^]*))?$/);
     const getData = async () => {
       // let data = await redisGet(redisKey);
       let data = null;
@@ -110,8 +126,8 @@ app
     const replaceData = () => null;
 
     if (matches) {
-      let [, amount, description] = matches;
-      const fullName = `${firstName} ${lastName}`;
+      let [, amount, description = ''] = matches;
+      const fullName = `${firstName}${lastName ? ` ${lastName}` : ''}`;
       const data = await getData();
       const {
         initialUser,
@@ -119,6 +135,10 @@ app
       } = data;
 
       amount = +amount;
+
+      if (description) {
+        description = ` (${description})`;
+      }
 
       if (!initialUser) {
         data.initialUser = {
@@ -135,19 +155,23 @@ app
         date: moment.utc().format('DD MMMM YYYY в HH:mm UTC')
       });
 
-      const action = amount > 0
-        ? 'дал'
-        : amount === 0
-          ? 'фанится'
-          : 'взял';
-      const amountText = amount === 0
-        ? ''
-        : ` ${Math.abs(amount)}р. на ${description}`;
-
       await replaceData(data);
 
-      const imageUrl = IMAGE_URL + '?' + Math.random();
-      const thumbUrl = THUMB_URL + '?' + Math.random();
+      const keyboard = [[{
+        text: 'Подтверждено',
+        callback_data: JSON.stringify({
+          type: 'accept-button',
+          userId,
+          fullName,
+          amount,
+          description
+        })
+      }, {
+        text: 'Отклонено',
+        callback_data: JSON.stringify({
+          type: 'decline-button'
+        })
+      }]];
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
@@ -155,31 +179,32 @@ app
           {
             type: 'article',
             id: `+${moment().toJSON()}`,
-            thumb_url: thumbUrl,
+            thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
             input_message_content: {
-              message_text: `${fullName} взял ${amount}р (${description})`
+              message_text: `${fullName} взял ${amount}р${description}`
             },
+            reply_markup: keyboard,
             title: 'Взял',
-            description: `Взял ${amount}р (${description})`
+            description: `Взял ${amount}р${description}`
           },
           {
             type: 'article',
             id: `-${moment().toJSON()}`,
-            thumb_url: thumbUrl,
+            thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
             input_message_content: {
-              message_text: `${fullName} вернул ${amount}р (${description})`
+              message_text: `${fullName} вернул ${amount}р`
             },
+            reply_markup: keyboard,
             title: 'Вернул',
-            description: `Вернул ${amount}р (${description})`
+            description: `Вернул ${amount}р`
           }
         ],
         cache_time: 0,
         next_offset: ''
-        // text: `${fullName} ${action}${amountText}`
       });
 
       ctx.answerSent = true;
