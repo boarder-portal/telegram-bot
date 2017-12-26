@@ -107,7 +107,7 @@ app
           inline_message_id,
           text: 'Срок хранения истек',
           parse_mode: 'Markdown',
-          reply_markup: null
+          reply_markup: []
         });
 
         return next();
@@ -188,7 +188,7 @@ app
         fullName,
         amount,
         description
-      }), 'EX', 10]);
+      }), 'EX', 30]);
 
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
         inline_query_id: queryId,
