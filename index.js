@@ -161,6 +161,7 @@ app
               message_text: `${fullName} взял ${amount}р (${description})`
             },
             title: 'Взял',
+            caption: `Взял ${amount}р (${description})`,
             description: `Взял ${amount}р (${description})`
           },
           {
@@ -174,6 +175,7 @@ app
               message_text: `${fullName} вернул ${amount}р (${description})`
             },
             title: 'Вернул',
+            caption: `Вернул ${amount}р (${description})`,
             description: `Вернул ${amount}р (${description})`
           }
         ],
