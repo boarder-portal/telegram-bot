@@ -107,7 +107,9 @@ app
           inline_message_id,
           text: 'Срок хранения истек',
           parse_mode: 'Markdown',
-          reply_markup: []
+          reply_markup: {
+            inline_keyboard: []
+          }
         });
 
         return next();
