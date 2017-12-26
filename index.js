@@ -95,8 +95,9 @@ app
 
       console.log(matches);
 
-      let [response, method, queryId] = matches;
-      const transactionCandidate = await redisGet(`transaction-candidate-${queryId}`);
+      let [, response, method, queryId] = matches;
+      const transactionCandidateKey = `transaction-candidate-${queryId}`;
+      const transactionCandidate = await redisGet(transactionCandidateKey);
 
       if (!transactionCandidate) {
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
@@ -111,7 +112,33 @@ app
         return next();
       }
 
+      const {
+        userId: masterUserId,
+        fullName: masterFullName,
+        amount,
+        description
+      } = transactionCandidate;
+
+      /*
+      if (masterUserId === userId) {
+        return next();
+      }
+      */
+
       const fullName = `${firstName}${lastName ? ` ${lastName}` : ''}`;
+      const text = method === 'take'
+        ? `Я взял ${amount}р${description}`
+        : `Я вернул ${amount}р`;
+
+      await redisDrop(transactionCandidateKey);
+
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+        inline_message_id,
+        text: `${response === 'accept' ? '✅' : '❌'} ${text}`,
+        reply_markup: {
+          inline_keyboard: []
+        }
+      });
 
       return next();
     }
@@ -162,7 +189,7 @@ app
       amount = +amount;
 
       if (description) {
-        description = ` (${description})`;
+        description = ` на ${description}`;
       }
 
       if (!initialUser) {
@@ -198,7 +225,7 @@ app
             thumb_width: 48,
             thumb_height: 48,
             input_message_content: {
-              message_text: `${fullName} взял ${amount}р${description}`
+              message_text: `Я взял ${amount}р${description}`
             },
             reply_markup: {
               inline_keyboard: [[{
@@ -219,7 +246,7 @@ app
             thumb_width: 48,
             thumb_height: 48,
             input_message_content: {
-              message_text: `${fullName} вернул ${amount}р`
+              message_text: `Я вернул ${amount}р`
             },
             reply_markup: {
               inline_keyboard: [[{
