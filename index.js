@@ -68,7 +68,7 @@ app
     }
   })
   .use(async (ctx, next) => {
-    if (ctx.url !== `new-message/${TELEGRAM_BOT_ID}` || ctx.method !== 'POST') {
+    if (ctx.url !== `/new-message/${TELEGRAM_BOT_ID}` || ctx.method !== 'POST') {
       return next();
     }
 
