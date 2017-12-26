@@ -153,31 +153,27 @@ app
         inline_query_id: queryId,
         results: [
           {
-            type: 'photo',
+            type: 'article',
             id: `+${moment().toJSON()}`,
-            photo_url: imageUrl,
             thumb_url: thumbUrl,
-            photo_width: 900,
-            photo_height: 900,
+            thumb_width: 48,
+            thumb_height: 48,
             input_message_content: {
               message_text: `${fullName} взял ${amount}р (${description})`
             },
             title: 'Взял',
-            caption: `Взял ${amount}р (${description})`,
             description: `Взял ${amount}р (${description})`
           },
           {
-            type: 'photo',
+            type: 'article',
             id: `-${moment().toJSON()}`,
-            photo_url: imageUrl,
             thumb_url: thumbUrl,
-            photo_width: 900,
-            photo_height: 900,
+            thumb_width: 48,
+            thumb_height: 48,
             input_message_content: {
               message_text: `${fullName} вернул ${amount}р (${description})`
             },
             title: 'Вернул',
-            caption: `Вернул ${amount}р (${description})`,
             description: `Вернул ${amount}р (${description})`
           }
         ],
