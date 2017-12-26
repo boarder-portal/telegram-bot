@@ -10,10 +10,9 @@ const redis = require('redis');
 
 const THUMB_URL = 'https://money-telegram-bot.herokuapp.com/thumb.jpg';
 
-const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
-
 const {
   PORT = 3001,
+  TELEGRAM_BOT_ID,
   REDIS_URL
 } = process.env;
 
@@ -54,7 +53,7 @@ app
 
         (async () => {
           try {
-            await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
+            await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
               inline_query_id: ctx.inlineQuery.id,
               results: JSON.stringify([]),
               cache_time: 0,
@@ -69,7 +68,7 @@ app
     }
   })
   .use(async (ctx, next) => {
-    if (ctx.url !== '/new-message' || ctx.method !== 'POST') {
+    if (ctx.url !== `new-message/${TELEGRAM_BOT_ID}` || ctx.method !== 'POST') {
       return next();
     }
 
@@ -163,7 +162,7 @@ app
         description
       }), 'EX', 60]);
 
-      await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
         inline_query_id: queryId,
         results: [
           {
@@ -238,7 +237,7 @@ app
         ? ''
         : ` ${Math.abs(diff)}р`;
 
-      await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/sendMessage`, {
         chat_id: '',
         text: `${initialUser.fullName} ${action}${amountText}`
       });
@@ -252,7 +251,7 @@ app
         history
       } = data;
 
-      await axios.post(`https://api.telegram.org/bot${botId}/sendMessage`, {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/sendMessage`, {
         chat_id: '',
         text: history
           .map(({
