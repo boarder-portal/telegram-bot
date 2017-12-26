@@ -25,12 +25,6 @@ const redisSet = util.promisify(client.set).bind(client);
 const redisDrop = util.promisify(client.del).bind(client);
 const redisGetKeys = util.promisify(client.keys).bind(client);
 
-(async () => {
-  const keys = await redisGetKeys('*');
-
-  await Promise.all(keys.map((key) => redisDrop(key)));
-})();
-
 console.log(`State up: ${moment().toJSON()}`);
 
 const app = new Application();
@@ -99,13 +93,15 @@ app
         return next();
       }
 
-      let [response, method, messageId] = matches;
-      const transactionCandidate = await redisGet(`transaction-candidate-${messageId}`);
+      console.log(matches);
+
+      let [response, method, queryId] = matches;
+      const transactionCandidate = await redisGet(`transaction-candidate-${queryId}`);
 
       if (!transactionCandidate) {
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
           inline_message_id,
-          text: 'Срок хранения истек',
+          text: '_Срок хранения истек_',
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: []
