@@ -6,8 +6,9 @@ const axios = require('axios');
 const moment = require('moment');
 const redis = require('redis');
 
+const imageUrl = require('./image');
+
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
-const imageUrl = 'https://loanscanada.ca/wp-content/uploads/2017/05/Borrowing_money.jpg';
 
 const {
   PORT,
@@ -165,10 +166,10 @@ app
             photo_width: 900,
             photo_height: 900,
             input_message_content: {
-              message_text: `${fullName} дал ${amount}р (${description})`
+              message_text: `${fullName} Вернул ${amount}р (${description})`
             },
-            title: 'Дал',
-            description: `Дал ${amount}р (${description})`
+            title: 'Вернул',
+            description: `Вернул ${amount}р (${description})`
           }
         ],
         cache_time: 0,
