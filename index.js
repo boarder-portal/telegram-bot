@@ -84,7 +84,36 @@ app
     }
 
     if (callback_query) {
-      console.log(callback_query);
+      const {
+        from: {
+          id: userId,
+          first_name: firstName,
+          last_name: lastName
+        },
+        inline_message_id,
+        data
+      } = callback_query;
+      const matches = data.match(/^(accept|decline)-(take|return)-(\d+)$/);
+
+      if (!matches) {
+        return next();
+      }
+
+      let [response, method, messageId] = matches;
+      const transactionCandidate = await redisGet(`transaction-candidate-${messageId}`);
+
+      if (!transactionCandidate) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+          inline_message_id,
+          text: 'Срок хранения истек',
+          parse_mode: 'Markdown',
+          reply_markup: null
+        });
+
+        return next();
+      }
+
+      const fullName = `${firstName}${lastName ? ` ${lastName}` : ''}`;
 
       return next();
     }
@@ -100,7 +129,6 @@ app
       },
       query
     } = inline_query;
-    const redisKey = `transaction-candidate-${queryId}`;
 
     const matches = query.match(/^(\d+)(?: ([^]*))?$/);
     const getData = async () => {
@@ -155,12 +183,12 @@ app
       });
 
       // await replaceData(data);
-      await redisSet([redisKey, JSON.stringify({
+      await redisSet([`transaction-candidate-${queryId}`, JSON.stringify({
         userId,
         fullName,
         amount,
         description
-      }), 'EX', 60]);
+      }), 'EX', 10]);
 
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
         inline_query_id: queryId,
