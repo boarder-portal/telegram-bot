@@ -1,17 +1,19 @@
+const path = require('path');
 const util = require('util');
 
 const Application = require('koa');
 const bodyParser = require('koa-bodyparser');
+const serve = require('koa-static');
 const axios = require('axios');
 const moment = require('moment');
 const redis = require('redis');
 
-const imageUrl = require('./image');
+const imageUrl = 'https://money-telegram-bot.herokuapp.com/image.jpg';
 
 const botId = '492845691:AAGq50SceR8P9foZGepZhVf8eSwXHWbXaQI';
 
 const {
-  PORT,
+  PORT = 3001,
   REDIS_URL
 } = process.env;
 
@@ -36,6 +38,7 @@ const app = new Application();
 moment.locale('ru');
 
 app
+  .use(serve(path.resolve(__dirname, 'static')))
   .use(bodyParser())
   .use(async (ctx, next) => {
     try {
