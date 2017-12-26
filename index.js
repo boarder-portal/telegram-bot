@@ -31,7 +31,7 @@ redisGetKeys('*').then((result) => {
   console.log(err);
 });
 
-console.log(process.env);
+console.log(`State up: ${moment().toJSON()}`);
 
 const app = new Application();
 
@@ -155,8 +155,8 @@ app
             id: `+${moment().toJSON()}`,
             photo_url: url,
             thumb_url: url,
-            photo_width: 900,
-            photo_height: 900,
+            photo_width: 48,
+            photo_height: 48,
             input_message_content: {
               message_text: `${fullName} взял ${amount}р (${description})`
             },
@@ -168,8 +168,8 @@ app
             id: `-${moment().toJSON()}`,
             photo_url: url,
             thumb_url: url,
-            photo_width: 900,
-            photo_height: 900,
+            photo_width: 48,
+            photo_height: 48,
             input_message_content: {
               message_text: `${fullName} вернул ${amount}р (${description})`
             },
