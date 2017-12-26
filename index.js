@@ -145,14 +145,16 @@ app
 
       await replaceData(data);
 
+      const url = imageUrl + '?' + Math.random();
+
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
         results: [
           {
             type: 'photo',
             id: `+${moment().toJSON()}`,
-            photo_url: imageUrl,
-            thumb_url: imageUrl,
+            photo_url: url,
+            thumb_url: url,
             photo_width: 900,
             photo_height: 900,
             input_message_content: {
@@ -164,12 +166,12 @@ app
           {
             type: 'photo',
             id: `-${moment().toJSON()}`,
-            photo_url: imageUrl,
-            thumb_url: imageUrl,
+            photo_url: url,
+            thumb_url: url,
             photo_width: 900,
             photo_height: 900,
             input_message_content: {
-              message_text: `${fullName} Вернул ${amount}р (${description})`
+              message_text: `${fullName} вернул ${amount}р (${description})`
             },
             title: 'Вернул',
             description: `Вернул ${amount}р (${description})`
