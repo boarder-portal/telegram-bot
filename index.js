@@ -101,7 +101,7 @@ app
       },
       query
     } = inline_query;
-    const redisKey = 'money-telegram-bot';
+    const redisKey = `transaction-candidate-${queryId}`;
 
     const matches = query.match(/^(\d+)(?: ([^]*))?$/);
     const getData = async () => {
@@ -155,23 +155,22 @@ app
         date: moment.utc().format('DD MMMM YYYY в HH:mm UTC')
       });
 
-      await replaceData(data);
+      // await replaceData(data);
+      await redisSet(redisKey, JSON.stringify({
+        type: 'accept-button',
+        userId,
+        fullName,
+        amount,
+        description
+      }));
 
       const keyboard = {
         inline_keyboard: [[{
           text: 'Подтверждено',
-          callback_data: JSON.stringify({
-            type: 'accept-button',
-            userId,
-            fullName,
-            amount,
-            description
-          })
+          callback_data: 'accept'
         }, {
           text: 'Отклонено',
-          callback_data: JSON.stringify({
-            type: 'decline-button'
-          })
+          callback_data: 'decline'
         }]]
       };
 
