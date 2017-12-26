@@ -157,21 +157,23 @@ app
 
       await replaceData(data);
 
-      const keyboard = [[{
-        text: 'Подтверждено',
-        callback_data: JSON.stringify({
-          type: 'accept-button',
-          userId,
-          fullName,
-          amount,
-          description
-        })
-      }, {
-        text: 'Отклонено',
-        callback_data: JSON.stringify({
-          type: 'decline-button'
-        })
-      }]];
+      const keyboard = {
+        inline_keyboard: [[{
+          text: 'Подтверждено',
+          callback_data: JSON.stringify({
+            type: 'accept-button',
+            userId,
+            fullName,
+            amount,
+            description
+          })
+        }, {
+          text: 'Отклонено',
+          callback_data: JSON.stringify({
+            type: 'decline-button'
+          })
+        }]]
+      };
 
       await axios.post(`https://api.telegram.org/bot${botId}/answerInlineQuery`, {
         inline_query_id: queryId,
