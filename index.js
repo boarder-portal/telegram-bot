@@ -496,6 +496,73 @@ app
       return next();
     }
 
+    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
+      inline_query_id: queryId,
+      results: [
+        {
+          type: 'article',
+          id: queryId,
+          thumb_url: THUMB_URL,
+          thumb_width: 48,
+          thumb_height: 48,
+          input_message_content: {
+            message_text: 'Я хочу получить текущий долг'
+          },
+          reply_markup: {
+            inline_keyboard: [[{
+              text: 'Получить текущий долг',
+              callback_data: `get-debt-${userId}`
+            }]]
+          },
+          title: 'Текущий долг',
+          description: 'Я хочу получить текущий долг'
+        },
+        {
+          type: 'article',
+          id: queryId,
+          thumb_url: THUMB_URL,
+          thumb_width: 48,
+          thumb_height: 48,
+          input_message_content: {
+            message_text: 'Я хочу получить историю выплат'
+          },
+          reply_markup: {
+            inline_keyboard: [[{
+              text: 'Получить историю выплат',
+              callback_data: `get-history-${userId}`
+            }]]
+          },
+          title: 'История выплат',
+          description: 'Я хочу получить историю выплат'
+        },
+        {
+          type: 'article',
+          id: queryId,
+          thumb_url: THUMB_URL,
+          thumb_width: 48,
+          thumb_height: 48,
+          input_message_content: {
+            message_text: 'Я хочу очистить историю выплат'
+          },
+          reply_markup: {
+            inline_keyboard: [[{
+              text: 'Подтверждено',
+              callback_data: `accept-clear-history-${userId}`
+            }, {
+              text: 'Отклонено',
+              callback_data: `decline-clear-history-${userId}`
+            }]]
+          },
+          title: 'Очистить историю выплат',
+          description: 'Я хочу очистить историю выплат'
+        }
+      ],
+      cache_time: 0,
+      next_offset: ''
+    });
+
+    ctx.answerSent = true;
+
     await next();
   })
   .listen(PORT, () => {
