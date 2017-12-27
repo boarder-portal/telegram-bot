@@ -120,11 +120,11 @@ app
         let debt = 0;
 
         history.forEach(({
-          masterUserId: transactionMasterUserId,
+          userId,
           method,
           amount
         }) => {
-          if (transactionMasterUserId === masterUserId) {
+          if (userId === masterUserId) {
             if (method === 'take') {
               debt -= amount;
             } else {
