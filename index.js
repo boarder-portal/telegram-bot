@@ -221,8 +221,8 @@ app
       }
 
       if (clearHistoryMatches) {
-        const method = getHistoryMatches[1];
-        const masterUserId = +getHistoryMatches[2];
+        const method = clearHistoryMatches[1];
+        const masterUserId = +clearHistoryMatches[2];
 
         if (masterUserId === userId) {
           return next();
