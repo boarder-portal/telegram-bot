@@ -100,7 +100,7 @@ app
         const maxUserId = Math.max(userId, masterUserId);
         const historyKey = `history-${minUserId}-${maxUserId}`;
 
-        const history = await redisGetList(historyKey, 0, -1);
+        const history = JSON.parse(await redisGetList(historyKey, 0, -1));
 
         if (!history) {
           await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
@@ -174,7 +174,7 @@ app
         const maxUserId = Math.max(userId, masterUserId);
         const historyKey = `history-${minUserId}-${maxUserId}`;
 
-        const history = await redisGetList(historyKey, 0, -1);
+        const history = JSON.parse(await redisGetList(historyKey, 0, -1));
 
         if (!history) {
           await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
