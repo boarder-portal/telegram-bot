@@ -501,7 +501,7 @@ app
       results: [
         {
           type: 'article',
-          id: queryId,
+          id: `get-${queryId}`,
           thumb_url: THUMB_URL,
           thumb_width: 48,
           thumb_height: 48,
@@ -519,7 +519,7 @@ app
         },
         {
           type: 'article',
-          id: queryId,
+          id: `history-${queryId}`,
           thumb_url: THUMB_URL,
           thumb_width: 48,
           thumb_height: 48,
@@ -537,7 +537,7 @@ app
         },
         {
           type: 'article',
-          id: queryId,
+          id: `clear-${queryId}`,
           thumb_url: THUMB_URL,
           thumb_width: 48,
           thumb_height: 48,
