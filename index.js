@@ -291,14 +291,16 @@ app
       const maxUserId = Math.max(userId, masterUserId);
       const historyKey = `history-${minUserId}-${maxUserId}`;
 
-      await redisPush(historyKey, JSON.stringify({
-        userId: masterUserId,
-        fullName: masterFullName,
-        method,
-        date: +new Date(),
-        amount,
-        description
-      }));
+      if (accepted) {
+        await redisPush(historyKey, JSON.stringify({
+          userId: masterUserId,
+          fullName: masterFullName,
+          method,
+          date: +new Date(),
+          amount,
+          description
+        }));
+      }
 
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
         inline_message_id,
