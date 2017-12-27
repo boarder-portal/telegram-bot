@@ -126,15 +126,15 @@ app
         }) => {
           if (userId === masterUserId) {
             if (method === 'take') {
-              debt -= amount;
-            } else {
               debt += amount;
+            } else {
+              debt -= amount;
             }
           } else {
             if (method === 'take') {
-              debt += amount;
-            } else {
               debt -= amount;
+            } else {
+              debt += amount;
             }
           }
         });
