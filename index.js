@@ -195,7 +195,7 @@ app
 
         const historyText = history
           .map(({
-            masterFullName,
+            fullName,
             method,
             date,
             amount,
@@ -204,7 +204,7 @@ app
             const dateString = moment.utc(date).format('DD.MM.YYYY HH:mm UTC');
             const action = method === 'take' ? 'взял в долг' : 'вернул';
 
-            return `${dateString}: ${masterFullName} ${action} ${amount}р${description}`;
+            return `${dateString}: ${fullName} ${action} ${amount}р${description ? ` (${description})` : ''}`;
           })
           .join('\n\n');
 
