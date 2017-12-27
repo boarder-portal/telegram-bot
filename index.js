@@ -103,7 +103,7 @@ app
 
         let history = await redisGetList(historyKey, 0, -1);
 
-        if (!history) {
+        if (!history.length) {
           await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
             inline_message_id,
             text: '_Истории выплат нет_',
@@ -179,7 +179,7 @@ app
 
         let history = await redisGetList(historyKey, 0, -1);
 
-        if (!history) {
+        if (!history.length) {
           await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
             inline_message_id,
             text: '_Истории выплат нет_',
