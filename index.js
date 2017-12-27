@@ -24,6 +24,8 @@ const redisGet = util.promisify(client.get).bind(client);
 const redisSet = util.promisify(client.set).bind(client);
 const redisDrop = util.promisify(client.del).bind(client);
 const redisGetKeys = util.promisify(client.keys).bind(client);
+const redisGetList = util.promisify(client.lrange).bind(client);
+const redisPush = util.promisify(client.rpush).bind(client);
 
 console.log(`State up: ${moment().toJSON()}`);
 
@@ -49,10 +51,8 @@ app
           try {
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
               inline_query_id: ctx.inlineQuery.id,
-              results: JSON.stringify([]),
-              cache_time: 0,
+              results: [],
               next_offset: ''
-              // text: `${fullName} ${action}${amountText}`
             });
           } catch (err) {
             console.log(err);
@@ -80,22 +80,142 @@ app
     if (callback_query) {
       const {
         from: {
-          id: userId,
-          first_name: firstName,
-          last_name: lastName
+          id: userId
         },
         inline_message_id,
-        data
+        data = ''
       } = callback_query;
-      const matches = data.match(/^(accept|decline)-(take|return)-(\d+)$/);
+      const getDebtMatches = data.match(/^get-debt-(\d+)$/);
+      const getHistoryMatches = data.match(/^get-history-(\d+)$/);
+      const transactionMatches = data.match(/^(accept|decline)-(take|return)-(\d+)$/);
 
-      if (!matches) {
+      if (getDebtMatches) {
+        const masterUserId = +getDebtMatches[1];
+
+        if (masterUserId === userId) {
+          return next();
+        }
+
+        const minUserId = Math.min(userId, masterUserId);
+        const maxUserId = Math.max(userId, masterUserId);
+        const historyKey = `history-${minUserId}-${maxUserId}`;
+
+        const history = await redisGetList(historyKey, 0, -1);
+
+        if (!history) {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+            inline_message_id,
+            text: '_Истории выплат нет_',
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: []
+            }
+          });
+
+          return next();
+        }
+
+        let debt = 0;
+
+        history.forEach(({
+          masterUserId: transactionMasterUserId,
+          method,
+          amount
+        }) => {
+          if (transactionMasterUserId === masterUserId) {
+            if (method === 'take') {
+              debt -= amount;
+            } else {
+              debt += amount;
+            }
+          } else {
+            if (method === 'take') {
+              debt += amount;
+            } else {
+              debt -= amount;
+            }
+          }
+        });
+
+        let caption;
+        let parseModeOptions = {};
+
+        if (debt === 0) {
+          caption = '_Никто никому ничего не должен_';
+          parseModeOptions = {
+            parse_mode: 'Markdown'
+          };
+        } else if (debt > 0) {
+          caption = `Я должен ${debt}р`;
+        } else {
+          caption = `Я дал в долг ${-debt}р`;
+        }
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+          inline_message_id,
+          text: caption,
+          ...parseModeOptions,
+          reply_markup: {
+            inline_keyboard: []
+          }
+        });
+
         return next();
       }
 
-      console.log(matches);
+      if (getHistoryMatches) {
+        const masterUserId = +getHistoryMatches[1];
 
-      let [, response, method, queryId] = matches;
+        const minUserId = Math.min(userId, masterUserId);
+        const maxUserId = Math.max(userId, masterUserId);
+        const historyKey = `history-${minUserId}-${maxUserId}`;
+
+        const history = await redisGetList(historyKey, 0, -1);
+
+        if (!history) {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+            inline_message_id,
+            text: '_Истории выплат нет_',
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: []
+            }
+          });
+
+          return next();
+        }
+
+        const historyText = history
+          .map(({
+            masterFullName,
+            method,
+            date,
+            amount,
+            description
+          }) => {
+            const dateString = moment.utc(date).format('DD.MM.YYYY HH:mm UTC');
+            const action = method === 'take' ? 'взял в долг' : 'вернул';
+
+            return `${dateString}: ${masterFullName} ${action} ${amount}р${description}`;
+          })
+          .join('\n\n');
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+          inline_message_id,
+          text: `История выплат:\n\n${historyText}`,
+          reply_markup: {
+            inline_keyboard: []
+          }
+        });
+
+        return next();
+      }
+
+      if (!transactionMatches) {
+        return next();
+      }
+
+      let [, response, method, queryId] = transactionMatches;
       const transactionCandidateKey = `transaction-candidate-${queryId}`;
       const transactionCandidate = await redisGet(transactionCandidateKey);
 
@@ -119,22 +239,33 @@ app
         description
       } = JSON.parse(transactionCandidate);
 
-      /*
       if (masterUserId === userId) {
         return next();
       }
-      */
 
-      const fullName = `${firstName}${lastName ? ` ${lastName}` : ''}`;
+      const accepted = response === 'accept';
       const text = method === 'take'
-        ? `Я взял ${amount}р${description ? ` (${description})` : ''}`
-        : `Я вернул ${amount}р`;
+        ? `Я взял в долг ${amount}р${description ? ` (${description})` : ''}${accepted ? ' #money' : ''}`
+        : `Я вернул ${amount}р${accepted ? ' #money' : ''}`;
 
       await redisDrop(transactionCandidateKey);
 
+      const minUserId = Math.min(userId, masterUserId);
+      const maxUserId = Math.max(userId, masterUserId);
+      const historyKey = `history-${minUserId}-${maxUserId}`;
+
+      await redisPush(historyKey, JSON.stringify({
+        userId: masterUserId,
+        fullName: masterFullName,
+        method,
+        date: +new Date(),
+        amount,
+        description
+      }));
+
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
         inline_message_id,
-        text: `${response === 'accept' ? '✅' : '❌'} ${text}`,
+        text: `${accepted ? '✅' : '❌'} ${text}`,
         reply_markup: {
           inline_keyboard: []
         }
@@ -143,67 +274,28 @@ app
       return next();
     }
 
-    ctx.inlineQuery = ctx.request.body.inline_query;
+    ctx.inlineQuery = inline_query;
 
     const {
       id: queryId,
       from: {
         id: userId,
+        username,
         first_name: firstName,
         last_name: lastName
       },
       query
     } = inline_query;
-
     const matches = query.match(/^(\d+)(?: ([^]*))?$/);
-    const getData = async () => {
-      // let data = await redisGet(redisKey);
-      let data = null;
-
-      if (data) {
-        data = JSON.parse(data);
-      } else {
-        data = {
-          history: [],
-          initialUser: null,
-          diff: 0
-        };
-
-        // await redisSet(redisKey, data);
-      }
-
-      return data;
-    };
-    // const replaceData = (data) => redisSet(redisKey, JSON.stringify(data));
-    const replaceData = () => null;
 
     if (matches) {
       let [, amount, description = ''] = matches;
-      const fullName = `${firstName}${lastName ? ` ${lastName}` : ''}`;
-      const data = await getData();
-      const {
-        initialUser,
-        history
-      } = data;
+      const fullName = username
+        ? `@${username}`
+        : `${firstName}${lastName ? ` ${lastName}` : ''}`;
 
       amount = +amount;
 
-      if (!initialUser) {
-        data.initialUser = {
-          id: userId,
-          fullName
-        };
-      }
-
-      data.diff += data.initialUser.id === userId ? amount : -amount;
-      history.push({
-        amount,
-        fullName,
-        description,
-        date: moment.utc().format('DD MMMM YYYY в HH:mm UTC')
-      });
-
-      // await replaceData(data);
       await redisSet([`transaction-candidate-${queryId}`, JSON.stringify({
         userId,
         fullName,
@@ -221,7 +313,7 @@ app
             thumb_width: 48,
             thumb_height: 48,
             input_message_content: {
-              message_text: `Я взял ${amount}р${description ? ` (${description})` : ''}`
+              message_text: `Я взял в долг ${amount}р${description ? ` (${description})` : ''}`
             },
             reply_markup: {
               inline_keyboard: [[{
@@ -233,7 +325,7 @@ app
               }]]
             },
             title: 'Взял',
-            description: `Взял ${amount}р${description ? ` (${description})` : ''}`
+            description: `Взял в долг ${amount}р${description ? ` (${description})` : ''}`
           },
           {
             type: 'article',
@@ -267,49 +359,58 @@ app
     }
 
     if (query === 'get') {
-      const data = await getData();
-      const {
-        initialUser,
-        diff
-      } = data;
-
-      if (!initialUser) {
-        return next();
-      }
-
-      const action = diff > 0
-        ? 'дал взаймы'
-        : diff === 0
-          ? 'ничего никому не должен'
-          : 'должен';
-      const amountText = diff === 0
-        ? ''
-        : ` ${Math.abs(diff)}р`;
-
-      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/sendMessage`, {
-        chat_id: '',
-        text: `${initialUser.fullName} ${action}${amountText}`
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
+        inline_query_id: queryId,
+        results: [
+          {
+            type: 'article',
+            id: `+${moment().toJSON()}`,
+            thumb_url: THUMB_URL,
+            thumb_width: 48,
+            thumb_height: 48,
+            input_message_content: {
+              message_text: 'Я хочу получить текущий долг'
+            },
+            reply_markup: {
+              inline_keyboard: [[{
+                text: 'Получить текущий долг',
+                callback_data: `get-debt-${userId}`
+              }]]
+            },
+            title: 'Текущий долг',
+            description: 'Я хочу получить текущий долг'
+          }
+        ],
+        next_offset: ''
       });
 
       return next();
     }
 
     if (query === 'history') {
-      const data = await getData();
-      const {
-        history
-      } = data;
-
-      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/sendMessage`, {
-        chat_id: '',
-        text: history
-          .map(({
-            amount,
-            fullName,
-            description,
-            date
-          }) => `${amount} ${fullName} ${description} ${date}`)
-          .join('\n')
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
+        inline_query_id: queryId,
+        results: [
+          {
+            type: 'article',
+            id: `+${moment().toJSON()}`,
+            thumb_url: THUMB_URL,
+            thumb_width: 48,
+            thumb_height: 48,
+            input_message_content: {
+              message_text: 'Я хочу получить историю выплат'
+            },
+            reply_markup: {
+              inline_keyboard: [[{
+                text: 'Получить историю выплат',
+                callback_data: `get-history-${userId}`
+              }]]
+            },
+            title: 'История выплат',
+            description: 'Я хочу получить историю выплат'
+          }
+        ],
+        next_offset: ''
       });
 
       return next();
