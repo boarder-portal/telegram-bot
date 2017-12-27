@@ -341,7 +341,7 @@ app
         fullName,
         amount,
         description
-      }), 'EX', 24 * 60 * 60]);
+      }), 'EX', 5 * 60 * 60]);
 
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
         inline_query_id: queryId,
