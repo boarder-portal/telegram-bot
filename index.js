@@ -166,6 +166,10 @@ app
       if (getHistoryMatches) {
         const masterUserId = +getHistoryMatches[1];
 
+        if (masterUserId === userId) {
+          return next();
+        }
+
         const minUserId = Math.min(userId, masterUserId);
         const maxUserId = Math.max(userId, masterUserId);
         const historyKey = `history-${minUserId}-${maxUserId}`;
