@@ -389,6 +389,7 @@ app
             description: 'Я хочу получить текущий долг'
           }
         ],
+        cache_time: 0,
         next_offset: ''
       });
 
@@ -420,6 +421,7 @@ app
             description: 'Я хочу получить историю выплат'
           }
         ],
+        cache_time: 0,
         next_offset: ''
       });
 
