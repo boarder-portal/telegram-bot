@@ -87,6 +87,7 @@ app
       } = callback_query;
       const getDebtMatches = data.match(/^get-debt-(\d+)$/);
       const getHistoryMatches = data.match(/^get-history-(\d+)$/);
+      const clearHistoryMatches = data.match(/^(accept|decline)-clear-history-(\d+)$/);
       const transactionMatches = data.match(/^(accept|decline)-(take|return)-(\d+)$/);
 
       if (getDebtMatches) {
@@ -219,6 +220,34 @@ app
         return next();
       }
 
+      if (clearHistoryMatches) {
+        const method = getHistoryMatches[1];
+        const masterUserId = +getHistoryMatches[2];
+
+        if (masterUserId === userId) {
+          return next();
+        }
+
+        const minUserId = Math.min(userId, masterUserId);
+        const maxUserId = Math.max(userId, masterUserId);
+        const historyKey = `history-${minUserId}-${maxUserId}`;
+        const accepted = method === 'accept';
+
+        if (accepted) {
+          await redisDrop(historyKey);
+        }
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/editMessageText`, {
+          inline_message_id,
+          text: `${accepted ? '✅' : '❌'} Я хочу очистить историю выплат`,
+          reply_markup: {
+            inline_keyboard: []
+          }
+        });
+
+        return next();
+      }
+
       if (!transactionMatches) {
         return next();
       }
@@ -316,7 +345,7 @@ app
         results: [
           {
             type: 'article',
-            id: `+${moment().toJSON()}`,
+            id: `+${queryId}`,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -337,7 +366,7 @@ app
           },
           {
             type: 'article',
-            id: `-${moment().toJSON()}`,
+            id: `-${queryId}`,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -372,7 +401,7 @@ app
         results: [
           {
             type: 'article',
-            id: `+${moment().toJSON()}`,
+            id: queryId,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -404,7 +433,7 @@ app
         results: [
           {
             type: 'article',
-            id: `+${moment().toJSON()}`,
+            id: queryId,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -419,6 +448,41 @@ app
             },
             title: 'История выплат',
             description: 'Я хочу получить историю выплат'
+          }
+        ],
+        cache_time: 0,
+        next_offset: ''
+      });
+
+      ctx.answerSent = true;
+
+      return next();
+    }
+
+    if (query === 'clear') {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
+        inline_query_id: queryId,
+        results: [
+          {
+            type: 'article',
+            id: queryId,
+            thumb_url: THUMB_URL,
+            thumb_width: 48,
+            thumb_height: 48,
+            input_message_content: {
+              message_text: 'Я хочу очистить историю выплат'
+            },
+            reply_markup: {
+              inline_keyboard: [[{
+                text: 'Подтверждено',
+                callback_data: `accept-clear-history-${userId}`
+              }, {
+                text: 'Отклонено',
+                callback_data: `decline-clear-history-${userId}`
+              }]]
+            },
+            title: 'Очистить историю выплат',
+            description: 'Я хочу очистить историю выплат'
           }
         ],
         cache_time: 0,
