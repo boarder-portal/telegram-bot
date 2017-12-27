@@ -388,6 +388,8 @@ app
         next_offset: ''
       });
 
+      ctx.answerSent = true;
+
       return next();
     }
 
@@ -416,6 +418,8 @@ app
         ],
         next_offset: ''
       });
+
+      ctx.answerSent = true;
 
       return next();
     }
