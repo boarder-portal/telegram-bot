@@ -52,6 +52,7 @@ app
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_ID}/answerInlineQuery`, {
               inline_query_id: ctx.inlineQuery.id,
               results: [],
+              cache_time: 0,
               next_offset: ''
             });
           } catch (err) {
