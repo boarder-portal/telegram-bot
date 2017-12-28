@@ -222,7 +222,7 @@ app
       }
 
       if (clearHistoryMatches) {
-        const method = clearHistoryMatches[1];
+        const response = clearHistoryMatches[1];
         const masterUserId = +clearHistoryMatches[2];
 
         if (masterUserId === userId) {
@@ -232,7 +232,7 @@ app
         const minUserId = Math.min(userId, masterUserId);
         const maxUserId = Math.max(userId, masterUserId);
         const historyKey = `history-${minUserId}-${maxUserId}`;
-        const accepted = method === 'accept';
+        const accepted = response === 'accept';
 
         if (accepted) {
           await redisDrop(historyKey);
