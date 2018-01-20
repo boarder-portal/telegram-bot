@@ -8,6 +8,7 @@ const axios = require('axios');
 const moment = require('moment');
 const redis = require('redis');
 
+const APP_URL = 'https://money-telegram-bot.herokuapp.com/';
 const THUMB_URL = 'https://money-telegram-bot.herokuapp.com/thumb.jpg';
 
 const {
@@ -63,6 +64,12 @@ app
     }
   })
   .use(async (ctx, next) => {
+    if (ctx.url === '/') {
+      ctx.body = '';
+  
+      return;
+    }
+
     if (ctx.url !== `/new-message/${TELEGRAM_BOT_ID}` || ctx.method !== 'POST') {
       return next();
     }
@@ -349,6 +356,7 @@ app
           {
             type: 'article',
             id: `+${queryId}`,
+            url: APP_URL,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -370,6 +378,7 @@ app
           {
             type: 'article',
             id: `-${queryId}`,
+            url: APP_URL,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -405,6 +414,7 @@ app
           {
             type: 'article',
             id: queryId,
+            url: APP_URL,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -437,6 +447,7 @@ app
           {
             type: 'article',
             id: queryId,
+            url: APP_URL,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -469,6 +480,7 @@ app
           {
             type: 'article',
             id: queryId,
+            url: APP_URL,
             thumb_url: THUMB_URL,
             thumb_width: 48,
             thumb_height: 48,
@@ -503,6 +515,7 @@ app
         {
           type: 'article',
           id: `get-${queryId}`,
+          url: APP_URL,
           thumb_url: THUMB_URL,
           thumb_width: 48,
           thumb_height: 48,
@@ -521,6 +534,7 @@ app
         {
           type: 'article',
           id: `history-${queryId}`,
+          url: APP_URL,
           thumb_url: THUMB_URL,
           thumb_width: 48,
           thumb_height: 48,
@@ -539,6 +553,7 @@ app
         {
           type: 'article',
           id: `clear-${queryId}`,
+          url: APP_URL,
           thumb_url: THUMB_URL,
           thumb_width: 48,
           thumb_height: 48,
